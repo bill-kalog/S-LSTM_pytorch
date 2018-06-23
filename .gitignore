@@ -102,3 +102,12 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# folders
+runs/*
+test/*
+.data/*
+.vector_cache/*
+
+# files
+weights.json
