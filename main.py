@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import copy
 
 
 from torchtext import data
@@ -31,8 +32,8 @@ def do_forward_pass(batch, s_encoder, loss_function):
 
 
 # train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_FINE_PHRASES')
-train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_FINE')
-# train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_BIN')
+# train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_FINE')
+train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_BIN')
 # train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_BIN_PHRASES')
 
 if torch.cuda.is_available():
@@ -74,7 +75,7 @@ max_acc_k = 0
 acc_step = 0
 best_model = None
 config = {}
-config['epochs'] = 20
+config['epochs'] = 5
 config['k_'] = 2
 
 print('Starting training procedure')
@@ -94,6 +95,7 @@ for batch_idx, batch in enumerate(train_iter):
     train_losses_list.append(float(loss))
 
     # evaluate on dev set
+    # with torch.no_grad():
     dnn_encoder.eval()
     dev_batch = next(iter(dev_iter))
     # acc, loss, _ = perform_forward_pass(dev_batch, dnn_model, loss_function)
@@ -104,13 +106,12 @@ for batch_idx, batch in enumerate(train_iter):
 
     if acc > dev_max_acc:
         dev_max_acc = acc
-        best_model = dnn_encoder
+        best_model = copy.deepcopy(dnn_encoder)
         max_acc_k = acc_k
         acc_step = batch_idx
         # check acc on test set
         test_batch = next(iter(test_iter))
-        t_acc, t_loss, _, acc_k = do_forward_pass(
-            test_batch, dnn_encoder, loss_function)
+        t_acc, t_loss, _, acc_k = do_forward_pass(test_batch, dnn_encoder, loss_function)
         print('accuraccy on test set is {} and at topk {}'.format(
             t_acc, acc_k))
 
