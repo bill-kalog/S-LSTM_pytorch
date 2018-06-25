@@ -22,7 +22,7 @@ def load_data(chosen_dataset, chosen_dataset_name):
         train, dev, test = chosen_dataset.splits(inputs, answers, fine_grained=False, use_phrases=True)
     else:
         raise NotImplementedError("Support for other datasets is currently missing!!")
-
+    
     print('Building vocabulary')
     inputs.build_vocab(train, dev, test)
     # inputs.vocab.load_vectors('glove.6B.300d')

@@ -111,3 +111,7 @@ test/*
 
 # files
 weights.json
+
+
+.bash_history
+.ipython/

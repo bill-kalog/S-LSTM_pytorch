@@ -14,15 +14,11 @@ flag_phrases = True
 
 class SST_SENT(data.Dataset):
     '''
-    load SST finegrained version from
+    load SST from
     https://github.com/harvardnlp/sent-conv-torch
     '''
-    # links without phrases
+    # links for fine grained without phrases
     urls = ['https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.fine.dev', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.fine.test', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.fine.train']
-    # links with phrases on train set
-    # urls = ['https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.fine.dev', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.fine.test', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.fine.phrases.train']
-    # urls = ['https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.binary.dev', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.binary.test', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.binary.train']
-    # urls = ['https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.binary.dev', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.binary.test', 'https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/stsa.binary.phrases.train']
     
     name = 'SST_FINE'
     dirname = ''
