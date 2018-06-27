@@ -8,6 +8,7 @@ from torchtext import data
 from utils import load_data
 from sst_sent import SST_SENT
 from recurrent_models import RNN_encoder
+from slstm import SLSTM
 
 from IPython import embed
 
@@ -53,9 +54,16 @@ dev_iter.init_epoch()
 test_iter.init_epoch()
 
 
-dnn_encoder = RNN_encoder(
+# dnn_encoder = RNN_encoder(
+#     input_dim=inputs.vocab.vectors.size()[1],
+#     output_dim=100,
+#     num_classes=len(answers.vocab.freqs.keys()),
+#     vocab=inputs.vocab)
+
+dnn_encoder = SLSTM(
     input_dim=inputs.vocab.vectors.size()[1],
-    output_dim=100,
+    hidden_size=50,
+    num_layers=3,
     num_classes=len(answers.vocab.freqs.keys()),
     vocab=inputs.vocab)
 
