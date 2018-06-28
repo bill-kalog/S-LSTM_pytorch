@@ -14,7 +14,6 @@ from IPython import embed
 
 
 def do_forward_pass(batch, s_encoder, loss_function):
-
     l_probs, h_l, attention_weights = s_encoder(
         batch.text[0], sentences_length=batch.text[1])
 
@@ -64,6 +63,7 @@ dnn_encoder = SLSTM(
     input_dim=inputs.vocab.vectors.size()[1],
     hidden_size=50,
     num_layers=3,
+    window=1,
     num_classes=len(answers.vocab.freqs.keys()),
     vocab=inputs.vocab)
 
