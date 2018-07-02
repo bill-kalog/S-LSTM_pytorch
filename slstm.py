@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from IPython import embed
+from torch.autograd import Variable
+from attention import WeightedSumAttention
+
 
 if torch.cuda.is_available():  # gpu support
     dtype_float = torch.cuda.FloatTensor
@@ -36,136 +39,152 @@ class SLSTM(nn.Module):
         # g : sentence weights
         # word processing weights
         # hidden_size = 10
-        # torch.Tensor(hidden_size, hidden_size)
-        # nn.Parameter(torch.Tensor(hidden_size, hidden_size))
+        # hidden_size, hidden_size)
+        # nn.Parameter(hidden_size, hidden_size))
         # torch.normal(mean=0, std=torch.Tensor(hidden_size, hidden_size))
         #  m[self.somehting whatever].weight.data.normal_(0.0, 0.02)
         # https://gist.github.com/ikhlestov/031e0f4e83b968cede8df1d19f3d4714
 
         # self.i_hat
-        self.W_i_hat_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_i_hat_c.data.normal_(0, 0.1)
-        self.W_i_hat_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_i_hat_lr.data.normal_(0, 0.1)
-        self.W_i_hat_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_i_hat_x.data.normal_(0, 0.1)
-        self.W_i_hat_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_i_hat_g.data.normal_(0, 0.1)
+        self.W_i_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_i_hat_c.data.normal_(0, 0.1)
+        self.W_i_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_i_hat_lr.data.normal_(0, 0.1)
+        self.W_i_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_i_hat_x.data.normal_(0, 0.1)
+        self.W_i_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_i_hat_g.data.normal_(0, 0.1)
 
         # self.l_hat
-        self.W_l_hat_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_l_hat_c.data.normal_(0, 0.1)
-        self.W_l_hat_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_l_hat_lr.data.normal_(0, 0.1)
-        self.W_l_hat_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_l_hat_x.data.normal_(0, 0.1)
-        self.W_l_hat_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_l_hat_g.data.normal_(0, 0.1)
+        self.W_l_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_l_hat_c.data.normal_(0, 0.1)
+        self.W_l_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_l_hat_lr.data.normal_(0, 0.1)
+        self.W_l_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_l_hat_x.data.normal_(0, 0.1)
+        self.W_l_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_l_hat_g.data.normal_(0, 0.1)
 
         # self.r_hat
-        self.W_r_hat_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_r_hat_c.data.normal_(0, 0.1)
-        self.W_r_hat_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_r_hat_lr.data.normal_(0, 0.1)
-        self.W_r_hat_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_r_hat_x.data.normal_(0, 0.1)
-        self.W_r_hat_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_r_hat_g.data.normal_(0, 0.1)
+        self.W_r_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_r_hat_c.data.normal_(0, 0.1)
+        self.W_r_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_r_hat_lr.data.normal_(0, 0.1)
+        self.W_r_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_r_hat_x.data.normal_(0, 0.1)
+        self.W_r_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_r_hat_g.data.normal_(0, 0.1)
 
         # self.f_hat
-        self.W_f_hat_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_c.data.normal_(0, 0.1)
-        self.W_f_hat_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_f_hat_lr.data.normal_(0, 0.1)
-        self.W_f_hat_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_x.data.normal_(0, 0.1)
-        self.W_f_hat_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_g.data.normal_(0, 0.1)
+        self.W_f_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_c.data.normal_(0, 0.1)
+        self.W_f_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_lr.data.normal_(0, 0.1)
+        self.W_f_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_x.data.normal_(0, 0.1)
+        self.W_f_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_g.data.normal_(0, 0.1)
 
         # self.s_hat
-        self.W_s_hat_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_s_hat_c.data.normal_(0, 0.1)
-        self.W_s_hat_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_s_hat_lr.data.normal_(0, 0.1)
-        self.W_s_hat_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_s_hat_x.data.normal_(0, 0.1)
-        self.W_s_hat_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_s_hat_g.data.normal_(0, 0.1)
+        self.W_s_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_s_hat_c.data.normal_(0, 0.1)
+        self.W_s_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_s_hat_lr.data.normal_(0, 0.1)
+        self.W_s_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_s_hat_x.data.normal_(0, 0.1)
+        self.W_s_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_s_hat_g.data.normal_(0, 0.1)
 
         # self.output_gate
-        self.W_output_gate_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_output_gate_c.data.normal_(0, 0.1)
-        self.W_output_gate_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_output_gate_lr.data.normal_(0, 0.1)
-        self.W_output_gate_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_output_gate_x.data.normal_(0, 0.1)
-        self.W_output_gate_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_output_gate_g.data.normal_(0, 0.1)
+        self.W_output_gate_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_output_gate_c.data.normal_(0, 0.1)
+        self.W_output_gate_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_output_gate_lr.data.normal_(0, 0.1)
+        self.W_output_gate_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_output_gate_x.data.normal_(0, 0.1)
+        self.W_output_gate_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_output_gate_g.data.normal_(0, 0.1)
 
         # self.u_gate
-        self.W_u_gate_c = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_u_gate_c.data.normal_(0, 0.1)
-        self.W_u_gate_lr = nn.Parameter(torch.Tensor(2 * hidden_size, hidden_size))
-        self.W_u_gate_lr.data.normal_(0, 0.1)
-        self.W_u_gate_x = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_u_gate_x.data.normal_(0, 0.1)
-        self.W_u_gate_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_u_gate_g.data.normal_(0, 0.1)
+        self.W_u_gate_c = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_u_gate_c.data.normal_(0, 0.1)
+        self.W_u_gate_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
+        # self.W_u_gate_lr.data.normal_(0, 0.1)
+        self.W_u_gate_x = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_u_gate_x.data.normal_(0, 0.1)
+        self.W_u_gate_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_u_gate_g.data.normal_(0, 0.1)
 
         # biases
         self.i_hat_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.i_hat_bias.data.normal_(0, 0.1)
+        # self.i_hat_bias.data.normal_(0, 0.1)
         self.l_hat_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.l_hat_bias.data.normal_(0, 0.1)
+        # self.l_hat_bias.data.normal_(0, 0.1)
         self.r_hat_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.r_hat_bias.data.normal_(0, 0.1)
+        # self.r_hat_bias.data.normal_(0, 0.1)
         self.f_hat_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.f_hat_bias.data.normal_(0, 0.1)
+        # self.f_hat_bias.data.normal_(0, 0.1)
         self.s_hat_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.s_hat_bias.data.normal_(0, 0.1)
+        # self.s_hat_bias.data.normal_(0, 0.1)
         self.output_gate_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.output_gate_bias.data.normal_(0, 0.1)
+        # self.output_gate_bias.data.normal_(0, 0.1)
         self.u_gate_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.u_gate_bias.data.normal_(0, 0.1)
+        # self.u_gate_bias.data.normal_(0, 0.1)
 
         # sentence vector weights
 
         # self.f_hat_g
-        self.W_f_hat_g_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_g_g.data.normal_(0, 0.1)
-        self.W_f_hat_g_h = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_g_h.data.normal_(0, 0.1)
+        self.W_f_hat_g_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_g_g.data.normal_(0, 0.1)
+        self.W_f_hat_g_h = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_g_h.data.normal_(0, 0.1)
 
         # self.f_hat_g_i
-        self.W_f_hat_g_i_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_g_i_g.data.normal_(0, 0.1)
-        self.W_f_hat_g_i_h = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_f_hat_g_i_h.data.normal_(0, 0.1)
+        self.W_f_hat_g_i_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_g_i_g.data.normal_(0, 0.1)
+        self.W_f_hat_g_i_h = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_f_hat_g_i_h.data.normal_(0, 0.1)
 
         # self.output_gate_g
-        self.W_output_gate_g_g = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_output_gate_g_g.data.normal_(0, 0.1)
-        self.W_output_gate_g_h = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.W_output_gate_g_h.data.normal_(0, 0.1)
+        self.W_output_gate_g_g = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_output_gate_g_g.data.normal_(0, 0.1)
+        self.W_output_gate_g_h = nn.Linear(hidden_size, hidden_size, bias=None)
+        # self.W_output_gate_g_h.data.normal_(0, 0.1)
 
         # biases sentence g
         self.f_hat_g_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.f_hat_g_bias.data.normal_(0, 0.1)
+        # self.f_hat_g_bias.data.normal_(0, 0.1)
         self.f_hat_g_i_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.f_hat_g_i_bias.data.normal_(0, 0.1)
+        # self.f_hat_g_i_bias.data.normal_(0, 0.1)
         self.output_gate_g_bias = nn.Parameter(torch.Tensor(hidden_size))
-        self.output_gate_g_bias.data.normal_(0, 0.1)
+        # self.output_gate_g_bias.data.normal_(0, 0.1)
 
         self.linear = nn.Linear(self.hidden_size, self.num_classes)
-        self.w1 = torch.randn(hidden_size, hidden_size, requires_grad=True)
-        self.a_2 = nn.Parameter(torch.ones(5))
-        self.b_2 = nn.Parameter(torch.zeros(5))
+        self.calc_attention_values = WeightedSumAttention(self.hidden_size)
 
+        self.W_1 = nn.Linear(self.hidden_size * 2, self.hidden_size)
+
+        flag = True
+        for p in self.parameters():
+            if p.dim() > 1:
+                if flag:
+                    print(p.shape)
+                    flag = False
+                    continue
+                # embed()
+                # nn.init.xavier_uniform(p)
+            nn.init.normal_(p, 0, 0.1)
+
+        # self.w1 = torch.randn(hidden_size, hidden_size, requires_grad=True)
+        # self.a_2 = nn.Parameter(torch.ones(5),requires_grad=True)
+        # self.b_2 = nn.Parameter(torch.zeros(5))
+        # self.aa = nn.Parameter(torch.FloatTensor(10).normal_(0, 0.1), requires_grad=True, name="o")
+        # self.w = nn.Parameter(torch.FloatTensor([0.1]), requires_grad=True)
         # self.init_weights()
 
     def forward(self, input_sentences, sentences_length):
         # embed()
-        # print (" matrix : {}".format(self.W_output_gate_g_g))
+        # print(" matrix : {}".format(self.W_f_hat_g_g.weight))
         word_vectors = self.embed(input_sentences)
         # randomly initialize states
         # interval_ = [-0.05, 0.05]
@@ -181,8 +200,17 @@ class SLSTM(nn.Module):
             hh_w, cs_w, sent_vec, sent_cs = \
                 self.slstm_step(hh_w, cs_w, sent_vec, sent_cs, word_vectors)
 
-        fc_out = self.linear(sent_vec)
+        avg_hh = hh_w.mean(dim=1)
+        conc_states_out = self.W_1(torch.cat((avg_hh, sent_vec), 1))
+        # embed()
+        # attention_weights = self.calc_attention_values(hh_w)
+        # # words_ = hh_w.transpose(1, 0)
+        # weights = attention_weights.unsqueeze(1)
+        # attented_representations = weights.bmm(hh_w).squeeze(1)
+        # fc_out = self.linear(attented_representations)
+        fc_out = self.linear(conc_states_out)
         log_softmax = F.log_softmax(fc_out, dim=1)
+
         return log_softmax, sent_vec, None
 
     def slstm_step(self, hidden_states_words, cell_state_words,
@@ -192,18 +220,18 @@ class SLSTM(nn.Module):
 
         # calculate sentence node (dummy)
         f_hat_g_gate = F.sigmoid(
-            sentence_vector @ self.W_f_hat_g_g +
-            averaged_word_hh @ self.W_f_hat_g_h + self.f_hat_g_bias
+            self.W_f_hat_g_g(sentence_vector) +
+            self.W_f_hat_g_h(averaged_word_hh) + self.f_hat_g_bias
         )
 
         output_gate_g = F.sigmoid(
-            sentence_vector @ self.W_output_gate_g_g +
-            averaged_word_hh @ self.W_output_gate_g_h + self.output_gate_bias
+            self.W_output_gate_g_g(sentence_vector) +
+            self.W_output_gate_g_h(averaged_word_hh) + self.output_gate_bias
         )
 
         f_hat_g_i = F.sigmoid(
-            torch.unsqueeze(sentence_vector @ self.W_f_hat_g_i_g, 1) +
-            hidden_states_words @ self.W_f_hat_g_i_h +
+            torch.unsqueeze(self.W_f_hat_g_i_g(sentence_vector), 1) +
+            self.W_f_hat_g_i_h(hidden_states_words) +
             torch.unsqueeze(self.f_hat_g_i_bias, 0)
         )
         # softmax for each f_i in  f_hat_i
@@ -240,58 +268,58 @@ class SLSTM(nn.Module):
 
         # calculate/update word states
         i_hat = F.sigmoid(
-            concat_before_after @ self. W_i_hat_lr +
-            hidden_states_words @ self.W_i_hat_c +
-            word_vectors @ self.W_i_hat_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_i_hat_g, 1) +
+            self.W_i_hat_lr(concat_before_after) +
+            self.W_i_hat_c(hidden_states_words) +
+            self.W_i_hat_x(word_vectors) +
+            torch.unsqueeze(self.W_i_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.i_hat_bias, 0)
         )
 
         l_hat = F.sigmoid(
-            concat_before_after @ self.W_l_hat_lr +
-            hidden_states_words @ self.W_l_hat_c +
-            word_vectors @ self.W_l_hat_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_l_hat_g, 1) +
+            self.W_l_hat_lr(concat_before_after) +
+            self.W_l_hat_c(hidden_states_words) +
+            self.W_l_hat_x(word_vectors) +
+            torch.unsqueeze(self.W_l_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.l_hat_bias, 0)
         )
 
         r_hat = F.sigmoid(
-            concat_before_after @ self.W_r_hat_lr +
-            hidden_states_words @ self.W_r_hat_c +
-            word_vectors @ self.W_r_hat_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_r_hat_g, 1) +
+            self.W_r_hat_lr(concat_before_after) +
+            self.W_r_hat_c(hidden_states_words) +
+            self.W_r_hat_x(word_vectors) +
+            torch.unsqueeze(self.W_r_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.r_hat_bias, 0)
         )
 
         f_hat = F.sigmoid(
-            concat_before_after @ self.W_f_hat_lr +
-            hidden_states_words @ self.W_f_hat_c +
-            word_vectors @ self.W_f_hat_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_f_hat_g, 1) +
+            self.W_f_hat_lr(concat_before_after) +
+            self.W_f_hat_c(hidden_states_words) +
+            self.W_f_hat_x(word_vectors) +
+            torch.unsqueeze(self.W_f_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.f_hat_bias, 0)
         )
 
         s_hat = F.sigmoid(
-            concat_before_after @ self.W_s_hat_lr +
-            hidden_states_words @ self.W_s_hat_c +
-            word_vectors @ self.W_s_hat_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_s_hat_g, 1) +
+            self.W_s_hat_lr(concat_before_after) +
+            self.W_s_hat_c(hidden_states_words) +
+            self.W_s_hat_x(word_vectors) +
+            torch.unsqueeze(self.W_s_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.s_hat_bias, 0)
         )
 
         output_gate = F.sigmoid(
-            concat_before_after @ self.W_output_gate_lr +
-            hidden_states_words @ self.W_output_gate_c +
-            word_vectors @ self.W_output_gate_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_output_gate_g, 1) +
+            self.W_output_gate_lr(concat_before_after) +
+            self.W_output_gate_c(hidden_states_words) +
+            self.W_output_gate_x(word_vectors) +
+            torch.unsqueeze(self.W_output_gate_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.output_gate_bias, 0)
         )
 
         u_gate = F.tanh(
-            concat_before_after @ self.W_u_gate_lr +
-            hidden_states_words @ self.W_u_gate_c +
-            word_vectors @ self.W_u_gate_x +
-            torch.unsqueeze(new_sentence_vector @ self.W_u_gate_g, 1) +
+            self.W_u_gate_lr(concat_before_after) +
+            self.W_u_gate_c(hidden_states_words) +
+            self.W_u_gate_x(word_vectors) +
+            torch.unsqueeze(self.W_u_gate_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.u_gate_bias, 0)
         )
 

@@ -57,12 +57,12 @@ test_iter.init_epoch()
 #     input_dim=inputs.vocab.vectors.size()[1],
 #     output_dim=100,
 #     num_classes=len(answers.vocab.freqs.keys()),
-#     vocab=inputs.vocab)
+#    vocab=inputs.vocab)
 
 dnn_encoder = SLSTM(
     input_dim=inputs.vocab.vectors.size()[1],
     hidden_size=50,
-    num_layers=3,
+    num_layers=1,
     window=1,
     num_classes=len(answers.vocab.freqs.keys()),
     vocab=inputs.vocab)
@@ -72,6 +72,7 @@ if torch.cuda.is_available():
 
 # define loss funtion and optimizer
 loss_function = nn.NLLLoss()
+# optimizer = optim.Adam(dnn_encoder.parameters(), weight_decay=0.97)
 optimizer = optim.Adam(dnn_encoder.parameters())
 
 train_losses_list = []
