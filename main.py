@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import copy
+import os
 
 
 from torchtext import data
@@ -12,10 +13,14 @@ from slstm import SLSTM
 
 from IPython import embed
 
+from tensorboardX import SummaryWriter
+
 
 def do_forward_pass(batch, s_encoder, loss_function):
     l_probs, h_l, attention_weights = s_encoder(
-        batch.text[0], sentences_length=batch.text[1])
+        batch.text[0], batch.text[1])
+    # l_probs, h_l, attention_weights = s_encoder(
+        # batch.text[0])
 
     # calculate loss
     loss = loss_function(l_probs, batch.label - 1)
@@ -29,6 +34,13 @@ def do_forward_pass(batch, s_encoder, loss_function):
         / predictions.size()[0]
     acc_k = float(torch.sum(filter_)) / predictions.size()[0]
     return acc, loss, h_l, acc_k
+
+# embed()
+writer = SummaryWriter()
+writer_path = list(writer.all_writers.keys())[0]
+best_model_path = os.path.join(writer_path, 'best_dev_model')
+if not os.path.exists(best_model_path):
+        os.makedirs(best_model_path)
 
 
 # train, dev, test, inputs, answers = load_data(SST_SENT, 'SST_FINE_PHRASES')
@@ -61,9 +73,9 @@ test_iter.init_epoch()
 
 dnn_encoder = SLSTM(
     input_dim=inputs.vocab.vectors.size()[1],
-    hidden_size=50,
+    hidden_size=100,
     num_layers=1,
-    window=1,
+    window=3,
     num_classes=len(answers.vocab.freqs.keys()),
     vocab=inputs.vocab)
 
@@ -75,6 +87,7 @@ loss_function = nn.NLLLoss()
 # optimizer = optim.Adam(dnn_encoder.parameters(), weight_decay=0.97)
 optimizer = optim.Adam(dnn_encoder.parameters())
 
+save_graph_of_model = True
 train_losses_list = []
 train_acc_list = []
 dev_acc_list = []
@@ -103,6 +116,9 @@ for batch_idx, batch in enumerate(train_iter):
     train_acc_list.append(acc)
     train_losses_list.append(float(loss))
 
+    writer.add_scalar('train/Loss', float(loss), batch_idx)
+    writer.add_scalar('train/Acc', acc, batch_idx)
+
     # evaluate on dev set
     # with torch.no_grad():
     dnn_encoder.eval()
@@ -124,6 +140,22 @@ for batch_idx, batch in enumerate(train_iter):
         print('accuraccy on test set is {} and at topk {}'.format(
             t_acc, acc_k))
 
+    writer.add_scalar('dev/Loss', float(loss), batch_idx)
+    writer.add_scalar('dev/Acc', acc, batch_idx)
+
+    # getting tracing of legacy functions not supported error
+    if save_graph_of_model:
+        # with SummaryWriter(comment='Net') as w:
+            # w.add_graph(dnn_encoder, (dev_batch.text[0], ))
+        # writer.add_graph(dnn_encoder, batch.text[0])
+        # l_probs, h_l, attention_weights = dnn_encoder(batch.text[0])
+        # embed()
+        # error check
+        # https://github.com/lanpa/tensorboard-pytorch/pull/106
+        # writer.add_graph(dnn_encoder, (batch.text[0], batch.text[1]), verbose=True)
+        # torch.onnx.export(dnn_encoder, (batch.text[0], batch.text[1]), "./IndexLayer.pb", verbose=True)
+        save_graph_of_model = False
+
     # info and stop criteria
     if train_iter.iterations % 100 == 0:
         print('epoch {} iteration {} current train acc {} train loss {} max dev acc {} at k {} at step {} \n'.format(
@@ -132,5 +164,5 @@ for batch_idx, batch in enumerate(train_iter):
 
     if train_iter.epoch > config['epochs']:
         break
-
+writer.close()
 embed()

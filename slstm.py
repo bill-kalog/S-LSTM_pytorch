@@ -183,6 +183,7 @@ class SLSTM(nn.Module):
         # self.init_weights()
 
     def forward(self, input_sentences, sentences_length):
+    # def forward(self, input_sentences):
         # embed()
         # print(" matrix : {}".format(self.W_f_hat_g_g.weight))
         word_vectors = self.embed(input_sentences)
@@ -342,6 +343,8 @@ class SLSTM(nn.Module):
     def get_hidden_states_before(self, hidden_states, step):
         padding = torch.zeros(
             [hidden_states.shape[0], step, hidden_states.shape[2]])
+        # TODO : if step to big i.e bigger than sentence this will produce an error
+        # if step too big take just what you can and rest zero
         displaced_hidden_states = hidden_states[:, :-step, :]
         return torch.cat((padding, displaced_hidden_states), 1)
 

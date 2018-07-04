@@ -25,8 +25,8 @@ def load_data(chosen_dataset, chosen_dataset_name):
     
     print('Building vocabulary')
     inputs.build_vocab(train, dev, test)
-    # inputs.vocab.load_vectors('glove.6B.100d')
-    inputs.vocab.load_vectors('glove.6B.50d')
+    inputs.vocab.load_vectors('glove.6B.100d')
+    # inputs.vocab.load_vectors('glove.6B.50d')
     # inputs.vocab.load_vectors('glove.6B.300d')
 
     answers.build_vocab(train)
