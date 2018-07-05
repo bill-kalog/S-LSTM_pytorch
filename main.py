@@ -75,7 +75,7 @@ dnn_encoder = SLSTM(
     input_dim=inputs.vocab.vectors.size()[1],
     hidden_size=100,
     num_layers=1,
-    window=3,
+    window=2,
     num_classes=len(answers.vocab.freqs.keys()),
     vocab=inputs.vocab)
 
@@ -115,10 +115,15 @@ for batch_idx, batch in enumerate(train_iter):
     optimizer.step()
     train_acc_list.append(acc)
     train_losses_list.append(float(loss))
-
+    # embed()
     writer.add_scalar('train/Loss', float(loss), batch_idx)
     writer.add_scalar('train/Acc', acc, batch_idx)
 
+    writer.add_scalar('timers_train/bf_after', float(dnn_encoder.bef_aft_time_el), batch_idx)
+    writer.add_scalar('timers_train/sent_time_el', float(dnn_encoder.sent_time_el), batch_idx)
+    writer.add_scalar('timers_train/words_time_gates_el', float(dnn_encoder.words_time_gates_el), batch_idx)
+    writer.add_scalar('timers_train/words_time_rest_el', float(dnn_encoder.words_time_rest_el), batch_idx)
+    
     # evaluate on dev set
     # with torch.no_grad():
     dnn_encoder.eval()
@@ -128,6 +133,11 @@ for batch_idx, batch in enumerate(train_iter):
         dev_batch, dnn_encoder, loss_function)
     dev_acc_list.append(acc)
     dev_losses_list.append(float(loss))
+
+    writer.add_scalar('timers_dev/bf_after', float(dnn_encoder.bef_aft_time_el), batch_idx)
+    writer.add_scalar('timers_dev/sent_time_el', float(dnn_encoder.sent_time_el), batch_idx)
+    writer.add_scalar('timers_dev/words_time_gates_el', float(dnn_encoder.words_time_gates_el), batch_idx)
+    writer.add_scalar('timers_dev/words_time_rest_el', float(dnn_encoder.words_time_rest_el), batch_idx)
 
     if acc > dev_max_acc:
         dev_max_acc = acc

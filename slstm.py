@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from IPython import embed
 from torch.autograd import Variable
 from attention import WeightedSumAttention
+import time
 
 
 if torch.cuda.is_available():  # gpu support
@@ -131,13 +132,17 @@ class SLSTM(nn.Module):
         self.u_gate_bias = nn.Parameter(torch.Tensor(hidden_size))
         # self.u_gate_bias.data.normal_(0, 0.1)
 
-        # sentence vector weights
+        # word gates declaration
+        self.i_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        self.l_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        self.r_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        self.f_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        self.s_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        self.output_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        self.u_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
 
-        # self.f_hat_g
-        self.W_f_hat_g_g = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_f_hat_g_g.data.normal_(0, 0.1)
-        self.W_f_hat_g_h = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_f_hat_g_h.data.normal_(0, 0.1)
+
+        # sentence vector weights
 
         # self.f_hat_g_i
         self.W_f_hat_g_i_g = nn.Linear(hidden_size, hidden_size, bias=None)
@@ -145,24 +150,25 @@ class SLSTM(nn.Module):
         self.W_f_hat_g_i_h = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_f_hat_g_i_h.data.normal_(0, 0.1)
 
-        # self.output_gate_g
-        self.W_output_gate_g_g = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_output_gate_g_g.data.normal_(0, 0.1)
-        self.W_output_gate_g_h = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_output_gate_g_h.data.normal_(0, 0.1)
-
         # biases sentence g
-        self.f_hat_g_bias = nn.Parameter(torch.Tensor(hidden_size))
-        # self.f_hat_g_bias.data.normal_(0, 0.1)
         self.f_hat_g_i_bias = nn.Parameter(torch.Tensor(hidden_size))
         # self.f_hat_g_i_bias.data.normal_(0, 0.1)
-        self.output_gate_g_bias = nn.Parameter(torch.Tensor(hidden_size))
-        # self.output_gate_g_bias.data.normal_(0, 0.1)
+
+        # sentence gates declaration
+        self.lin_f_hat_g = nn.Linear(2 * hidden_size, hidden_size)
+        self.lin_output_gate_g = nn.Linear(2 * hidden_size, hidden_size)
+
+
 
         self.linear = nn.Linear(self.hidden_size, self.num_classes)
         self.calc_attention_values = WeightedSumAttention(self.hidden_size)
 
         self.W_1 = nn.Linear(self.hidden_size * 2, self.hidden_size)
+
+        self.sent_time_el = 0
+        self.bef_aft_time_el = 0
+        self.words_time_gates_el = 0
+        self.words_time_rest_el = 0
 
         flag = True
         for p in self.parameters():
@@ -201,6 +207,8 @@ class SLSTM(nn.Module):
             hh_w, cs_w, sent_vec, sent_cs = \
                 self.slstm_step(hh_w, cs_w, sent_vec, sent_cs, word_vectors)
 
+        # take mean of word vectors and concatenate with sentence vector
+        # could have used a differnt approach too i.e attention, only words, sentence etc.
         avg_hh = hh_w.mean(dim=1)
         conc_states_out = self.W_1(torch.cat((avg_hh, sent_vec), 1))
         # embed()
@@ -218,17 +226,14 @@ class SLSTM(nn.Module):
                    sentence_vector, sentence_cell_state, word_vectors):
 
         averaged_word_hh = hidden_states_words.mean(dim=1)
+        sent_timer_start = time.time()
 
         # calculate sentence node (dummy)
-        f_hat_g_gate = F.sigmoid(
-            self.W_f_hat_g_g(sentence_vector) +
-            self.W_f_hat_g_h(averaged_word_hh) + self.f_hat_g_bias
-        )
 
-        output_gate_g = F.sigmoid(
-            self.W_output_gate_g_g(sentence_vector) +
-            self.W_output_gate_g_h(averaged_word_hh) + self.output_gate_bias
-        )
+        conc_sent_gates = torch.cat([sentence_vector, averaged_word_hh], 1)
+
+        f_hat_g_gate = F.sigmoid(self.lin_f_hat_g(conc_sent_gates))
+        output_gate_g = F.sigmoid(self.lin_output_gate_g(conc_sent_gates))
 
         f_hat_g_i = F.sigmoid(
             torch.unsqueeze(self.W_f_hat_g_i_g(sentence_vector), 1) +
@@ -244,6 +249,8 @@ class SLSTM(nn.Module):
 
         new_sentence_vector = output_gate_g * F.tanh(new_sentence_cell_state)
 
+        self.sent_time_el = time.time() - sent_timer_start
+        bef_aft_time_start = time.time()
         # update word node states
 
         # get before and after words i.e ξ_i
@@ -266,63 +273,79 @@ class SLSTM(nn.Module):
         # coancatenate states
         concat_before_after = torch.cat(
             (hidden_states_before, hidden_states_after), 2)
+        
+        self.bef_aft_time_el = time.time() - bef_aft_time_start
+        words_time_gates_start = time.time()
+
+        concat_part_word_gates = torch.cat(
+            (concat_before_after, hidden_states_words, word_vectors), 2)
 
         # calculate/update word states
         i_hat = F.sigmoid(
-            self.W_i_hat_lr(concat_before_after) +
-            self.W_i_hat_c(hidden_states_words) +
-            self.W_i_hat_x(word_vectors) +
+            # self.W_i_hat_lr(concat_before_after) +
+            # self.W_i_hat_c(hidden_states_words) +
+            # self.W_i_hat_x(word_vectors) +
+            self.i_hat_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_i_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.i_hat_bias, 0)
         )
 
         l_hat = F.sigmoid(
-            self.W_l_hat_lr(concat_before_after) +
-            self.W_l_hat_c(hidden_states_words) +
-            self.W_l_hat_x(word_vectors) +
+            # self.W_l_hat_lr(concat_before_after) +
+            # self.W_l_hat_c(hidden_states_words) +
+            # self.W_l_hat_x(word_vectors) +
+            self.l_hat_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_l_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.l_hat_bias, 0)
         )
 
         r_hat = F.sigmoid(
-            self.W_r_hat_lr(concat_before_after) +
-            self.W_r_hat_c(hidden_states_words) +
-            self.W_r_hat_x(word_vectors) +
+            # self.W_r_hat_lr(concat_before_after) +
+            # self.W_r_hat_c(hidden_states_words) +
+            # self.W_r_hat_x(word_vectors) +
+            self.r_hat_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_r_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.r_hat_bias, 0)
         )
 
         f_hat = F.sigmoid(
-            self.W_f_hat_lr(concat_before_after) +
-            self.W_f_hat_c(hidden_states_words) +
-            self.W_f_hat_x(word_vectors) +
+            # self.W_f_hat_lr(concat_before_after) +
+            # self.W_f_hat_c(hidden_states_words) +
+            # self.W_f_hat_x(word_vectors) +
+            self.f_hat_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_f_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.f_hat_bias, 0)
         )
 
         s_hat = F.sigmoid(
-            self.W_s_hat_lr(concat_before_after) +
-            self.W_s_hat_c(hidden_states_words) +
-            self.W_s_hat_x(word_vectors) +
+            # self.W_s_hat_lr(concat_before_after) +
+            # self.W_s_hat_c(hidden_states_words) +
+            # self.W_s_hat_x(word_vectors) +
+            self.s_hat_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_s_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.s_hat_bias, 0)
         )
 
         output_gate = F.sigmoid(
-            self.W_output_gate_lr(concat_before_after) +
-            self.W_output_gate_c(hidden_states_words) +
-            self.W_output_gate_x(word_vectors) +
+            # self.W_output_gate_lr(concat_before_after) +
+            # self.W_output_gate_c(hidden_states_words) +
+            # self.W_output_gate_x(word_vectors) +
+            self.output_gate_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_output_gate_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.output_gate_bias, 0)
         )
 
         u_gate = F.tanh(
-            self.W_u_gate_lr(concat_before_after) +
-            self.W_u_gate_c(hidden_states_words) +
-            self.W_u_gate_x(word_vectors) +
+            # self.W_u_gate_lr(concat_before_after) +
+            # self.W_u_gate_c(hidden_states_words) +
+            # self.W_u_gate_x(word_vectors) +
+            self.u_gate_conc(concat_part_word_gates) +
             torch.unsqueeze(self.W_u_gate_g(new_sentence_vector), 1) +
             torch.unsqueeze(self.u_gate_bias, 0)
         )
+
+        self.words_time_gates_el = time.time() - words_time_gates_start
+        words_time_rest_start = time.time()
 
         conc_gates = torch.cat([i_hat, l_hat, r_hat, f_hat, s_hat], 2)
         conc_gates = F.softmax(conc_gates, 2)
@@ -337,18 +360,24 @@ class SLSTM(nn.Module):
 
         new_hidden_state_words = output_gate * F.tanh(new_cell_t_words)
 
+        self.words_time_rest_el = time.time() - words_time_rest_start
+
         return new_hidden_state_words, new_cell_t_words, \
             new_sentence_vector, new_sentence_cell_state
 
     def get_hidden_states_before(self, hidden_states, step):
+        # if step is too big then just return a tensor with all zeros
+        if hidden_states.shape[1] <= step:
+            return torch.zeros(hidden_states.shape)
         padding = torch.zeros(
             [hidden_states.shape[0], step, hidden_states.shape[2]])
-        # TODO : if step to big i.e bigger than sentence this will produce an error
-        # if step too big take just what you can and rest zero
+
         displaced_hidden_states = hidden_states[:, :-step, :]
         return torch.cat((padding, displaced_hidden_states), 1)
 
     def get_hidden_states_after(self, hidden_states, step):
+        if hidden_states.shape[1] <= step:
+            return torch.zeros(hidden_states.shape)
         padding = torch.zeros(
             [hidden_states.shape[0], step, hidden_states.shape[2]])
         displaced_hidden_states = hidden_states[:, step:, :]
