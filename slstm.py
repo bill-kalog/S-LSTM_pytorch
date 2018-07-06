@@ -141,6 +141,9 @@ class SLSTM(nn.Module):
         self.output_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
         self.u_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
 
+        self.word_gates = nn.Linear(4 * hidden_size, 7 * hidden_size, bias=None)
+        self.word_sent_gate = nn.Linear(hidden_size, 7 * hidden_size, bias=None)
+
 
         # sentence vector weights
 
@@ -179,7 +182,10 @@ class SLSTM(nn.Module):
                     continue
                 # embed()
                 # nn.init.xavier_uniform(p)
+                # continue
+            # print(p)
             nn.init.normal_(p, 0, 0.1)
+            # nn.init.xavier_uniform(p)
 
         # self.w1 = torch.randn(hidden_size, hidden_size, requires_grad=True)
         # self.a_2 = nn.Parameter(torch.ones(5),requires_grad=True)
@@ -280,13 +286,23 @@ class SLSTM(nn.Module):
         concat_part_word_gates = torch.cat(
             (concat_before_after, hidden_states_words, word_vectors), 2)
 
+        # calculate all words gates in single step
+        # conc_words_receptive = self.word_gates(concat_part_word_gates)
+        # list_words_gates = torch.split(
+        #     conc_words_receptive, self.hidden_size, 2)
+        conc_word_sent_gate = self.word_sent_gate(new_sentence_vector)
+        list_conc_word_sent_gate = torch.split(
+            conc_word_sent_gate, self.hidden_size, 1)
+
         # calculate/update word states
         i_hat = F.sigmoid(
             # self.W_i_hat_lr(concat_before_after) +
             # self.W_i_hat_c(hidden_states_words) +
             # self.W_i_hat_x(word_vectors) +
             self.i_hat_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_i_hat_g(new_sentence_vector), 1) +
+            # list_words_gates[0] +
+            # torch.unsqueeze(self.W_i_hat_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[0], 1) +
             torch.unsqueeze(self.i_hat_bias, 0)
         )
 
@@ -295,7 +311,9 @@ class SLSTM(nn.Module):
             # self.W_l_hat_c(hidden_states_words) +
             # self.W_l_hat_x(word_vectors) +
             self.l_hat_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_l_hat_g(new_sentence_vector), 1) +
+            # list_words_gates[1] +
+            # torch.unsqueeze(self.W_l_hat_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[1], 1) +
             torch.unsqueeze(self.l_hat_bias, 0)
         )
 
@@ -304,7 +322,9 @@ class SLSTM(nn.Module):
             # self.W_r_hat_c(hidden_states_words) +
             # self.W_r_hat_x(word_vectors) +
             self.r_hat_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_r_hat_g(new_sentence_vector), 1) +
+            # list_words_gates[2] +
+            # torch.unsqueeze(self.W_r_hat_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[2], 1) +
             torch.unsqueeze(self.r_hat_bias, 0)
         )
 
@@ -313,7 +333,9 @@ class SLSTM(nn.Module):
             # self.W_f_hat_c(hidden_states_words) +
             # self.W_f_hat_x(word_vectors) +
             self.f_hat_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_f_hat_g(new_sentence_vector), 1) +
+            # list_words_gates[3] +
+            # torch.unsqueeze(self.W_f_hat_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[3], 1) +
             torch.unsqueeze(self.f_hat_bias, 0)
         )
 
@@ -322,7 +344,9 @@ class SLSTM(nn.Module):
             # self.W_s_hat_c(hidden_states_words) +
             # self.W_s_hat_x(word_vectors) +
             self.s_hat_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_s_hat_g(new_sentence_vector), 1) +
+            # list_words_gates[4] +
+            # torch.unsqueeze(self.W_s_hat_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[4], 1) +
             torch.unsqueeze(self.s_hat_bias, 0)
         )
 
@@ -331,7 +355,9 @@ class SLSTM(nn.Module):
             # self.W_output_gate_c(hidden_states_words) +
             # self.W_output_gate_x(word_vectors) +
             self.output_gate_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_output_gate_g(new_sentence_vector), 1) +
+            # list_words_gates[5] +
+            # torch.unsqueeze(self.W_output_gate_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[5], 1) +
             torch.unsqueeze(self.output_gate_bias, 0)
         )
 
@@ -340,7 +366,9 @@ class SLSTM(nn.Module):
             # self.W_u_gate_c(hidden_states_words) +
             # self.W_u_gate_x(word_vectors) +
             self.u_gate_conc(concat_part_word_gates) +
-            torch.unsqueeze(self.W_u_gate_g(new_sentence_vector), 1) +
+            # list_words_gates[6] +
+            # torch.unsqueeze(self.W_u_gate_g(new_sentence_vector), 1) +
+            torch.unsqueeze(list_conc_word_sent_gate[6], 1) +
             torch.unsqueeze(self.u_gate_bias, 0)
         )
 

@@ -84,8 +84,8 @@ if torch.cuda.is_available():
 
 # define loss funtion and optimizer
 loss_function = nn.NLLLoss()
-# optimizer = optim.Adam(dnn_encoder.parameters(), weight_decay=0.97)
-optimizer = optim.Adam(dnn_encoder.parameters())
+# optimizer = optim.Adam(dnn_encoder.parameters())
+optimizer = optim.Adam(dnn_encoder.parameters(), weight_decay=1e-5)
 
 save_graph_of_model = True
 train_losses_list = []
