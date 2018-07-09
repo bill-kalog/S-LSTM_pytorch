@@ -17,7 +17,7 @@ else:
 
 
 class SLSTM(nn.Module):
-    """docstring for SLSTM"""
+    """ SLSTM module"""
 
     def __init__(
             self, input_dim, hidden_size, num_layers, window,
@@ -122,17 +122,9 @@ class SLSTM(nn.Module):
         self.words_time_gates_el = 0
         self.words_time_rest_el = 0
 
-        # self.w1 = torch.randn(hidden_size, hidden_size, requires_grad=True)
-        # self.a_2 = nn.Parameter(torch.ones(5),requires_grad=True)
-        # self.b_2 = nn.Parameter(torch.zeros(5))
-        # self.aa = nn.Parameter(torch.FloatTensor(10).normal_(0, 0.1), requires_grad=True, name="o")
-        # self.w = nn.Parameter(torch.FloatTensor([0.1]), requires_grad=True)
         self.init_weights()
 
     def forward(self, input_sentences, sentences_length):
-    # def forward(self, input_sentences):
-        # embed()
-        # print(" matrix : {}".format(self.W_f_hat_g_g.weight))
         word_vectors = self.embed(input_sentences)
         # randomly initialize states
         # interval_ = [-0.05, 0.05]
@@ -152,7 +144,8 @@ class SLSTM(nn.Module):
         # could have used a differnt approach too i.e attention, only words, sentence etc.
         avg_hh = hh_w.mean(dim=1)
         conc_states_out = self.W_1(torch.cat((avg_hh, sent_vec), 1))
-        # embed()
+        # embed() 
+        # example code for using attention on top of the hidden states
         # attention_weights = self.calc_attention_values(hh_w)
         # # words_ = hh_w.transpose(1, 0)
         # weights = attention_weights.unsqueeze(1)

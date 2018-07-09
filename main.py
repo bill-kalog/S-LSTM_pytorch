@@ -129,7 +129,7 @@ for batch_idx, batch in enumerate(train_iter):
     writer.add_scalar('timers_train/sent_time_el', float(dnn_encoder.sent_time_el), batch_idx)
     writer.add_scalar('timers_train/words_time_gates_el', float(dnn_encoder.words_time_gates_el), batch_idx)
     writer.add_scalar('timers_train/words_time_rest_el', float(dnn_encoder.words_time_rest_el), batch_idx)
-    
+
     # evaluate on dev set
     # with torch.no_grad():
     dnn_encoder.eval()
