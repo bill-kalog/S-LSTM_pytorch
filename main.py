@@ -84,8 +84,8 @@ if torch.cuda.is_available():
 
 # define loss funtion and optimizer
 loss_function = nn.NLLLoss()
-# optimizer = optim.Adam(dnn_encoder.parameters())
-optimizer = optim.Adam(dnn_encoder.parameters(), weight_decay=1e-5)
+optimizer = optim.Adam(dnn_encoder.parameters())
+# optimizer = optim.Adam(dnn_encoder.parameters(), weight_decay=1e-5)
 
 save_graph_of_model = True
 train_losses_list = []
@@ -99,7 +99,7 @@ best_model = None
 config = {}
 config['epochs'] = 5
 config['k_'] = 2
-
+wd = 1e-3  # weight decay
 print('Starting training procedure')
 # start training procedure
 for batch_idx, batch in enumerate(train_iter):
@@ -112,6 +112,12 @@ for batch_idx, batch in enumerate(train_iter):
         batch, dnn_encoder, loss_function)
 
     loss.backward()
+    # embed()
+    # weight regularization
+    for group in optimizer.param_groups:
+        for param in group['params']:
+            param.data = param.data.add(-wd * group['lr'], param.data)
+
     optimizer.step()
     train_acc_list.append(acc)
     train_losses_list.append(float(loss))

@@ -39,80 +39,32 @@ class SLSTM(nn.Module):
         # x : word weights
         # g : sentence weights
         # word processing weights
-        # hidden_size = 10
-        # hidden_size, hidden_size)
-        # nn.Parameter(hidden_size, hidden_size))
-        # torch.normal(mean=0, std=torch.Tensor(hidden_size, hidden_size))
-        #  m[self.somehting whatever].weight.data.normal_(0.0, 0.02)
-        # https://gist.github.com/ikhlestov/031e0f4e83b968cede8df1d19f3d4714
 
         # self.i_hat
-        self.W_i_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_i_hat_c.data.normal_(0, 0.1)
-        self.W_i_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_i_hat_lr.data.normal_(0, 0.1)
-        self.W_i_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_i_hat_x.data.normal_(0, 0.1)
         self.W_i_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_i_hat_g.data.normal_(0, 0.1)
 
         # self.l_hat
-        self.W_l_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_l_hat_c.data.normal_(0, 0.1)
-        self.W_l_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_l_hat_lr.data.normal_(0, 0.1)
-        self.W_l_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_l_hat_x.data.normal_(0, 0.1)
         self.W_l_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_l_hat_g.data.normal_(0, 0.1)
 
         # self.r_hat
-        self.W_r_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_r_hat_c.data.normal_(0, 0.1)
-        self.W_r_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_r_hat_lr.data.normal_(0, 0.1)
-        self.W_r_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_r_hat_x.data.normal_(0, 0.1)
         self.W_r_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_r_hat_g.data.normal_(0, 0.1)
 
         # self.f_hat
-        self.W_f_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_f_hat_c.data.normal_(0, 0.1)
-        self.W_f_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_f_hat_lr.data.normal_(0, 0.1)
-        self.W_f_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_f_hat_x.data.normal_(0, 0.1)
         self.W_f_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_f_hat_g.data.normal_(0, 0.1)
 
         # self.s_hat
-        self.W_s_hat_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_s_hat_c.data.normal_(0, 0.1)
-        self.W_s_hat_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_s_hat_lr.data.normal_(0, 0.1)
-        self.W_s_hat_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_s_hat_x.data.normal_(0, 0.1)
         self.W_s_hat_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_s_hat_g.data.normal_(0, 0.1)
 
         # self.output_gate
-        self.W_output_gate_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_output_gate_c.data.normal_(0, 0.1)
-        self.W_output_gate_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_output_gate_lr.data.normal_(0, 0.1)
-        self.W_output_gate_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_output_gate_x.data.normal_(0, 0.1)
         self.W_output_gate_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_output_gate_g.data.normal_(0, 0.1)
 
         # self.u_gate
-        self.W_u_gate_c = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_u_gate_c.data.normal_(0, 0.1)
-        self.W_u_gate_lr = nn.Linear(2 * hidden_size, hidden_size, bias=None)
-        # self.W_u_gate_lr.data.normal_(0, 0.1)
-        self.W_u_gate_x = nn.Linear(hidden_size, hidden_size, bias=None)
-        # self.W_u_gate_x.data.normal_(0, 0.1)
         self.W_u_gate_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_u_gate_g.data.normal_(0, 0.1)
 
@@ -133,20 +85,19 @@ class SLSTM(nn.Module):
         # self.u_gate_bias.data.normal_(0, 0.1)
 
         # word gates declaration
-        self.i_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
-        self.l_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
-        self.r_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
-        self.f_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
-        self.s_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
-        self.output_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
-        self.u_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.i_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.l_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.r_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.f_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.s_hat_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.output_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
+        # self.u_gate_conc = nn.Linear(4 * hidden_size, hidden_size, bias=None)
 
         self.word_gates = nn.Linear(4 * hidden_size, 7 * hidden_size, bias=None)
         self.word_sent_gate = nn.Linear(hidden_size, 7 * hidden_size, bias=None)
 
 
         # sentence vector weights
-
         # self.f_hat_g_i
         self.W_f_hat_g_i_g = nn.Linear(hidden_size, hidden_size, bias=None)
         # self.W_f_hat_g_i_g.data.normal_(0, 0.1)
@@ -161,8 +112,6 @@ class SLSTM(nn.Module):
         self.lin_f_hat_g = nn.Linear(2 * hidden_size, hidden_size)
         self.lin_output_gate_g = nn.Linear(2 * hidden_size, hidden_size)
 
-
-
         self.linear = nn.Linear(self.hidden_size, self.num_classes)
         self.calc_attention_values = WeightedSumAttention(self.hidden_size)
 
@@ -173,26 +122,12 @@ class SLSTM(nn.Module):
         self.words_time_gates_el = 0
         self.words_time_rest_el = 0
 
-        flag = True
-        for p in self.parameters():
-            if p.dim() > 1:
-                if flag:
-                    print(p.shape)
-                    flag = False
-                    continue
-                # embed()
-                # nn.init.xavier_uniform(p)
-                # continue
-            # print(p)
-            nn.init.normal_(p, 0, 0.1)
-            # nn.init.xavier_uniform(p)
-
         # self.w1 = torch.randn(hidden_size, hidden_size, requires_grad=True)
         # self.a_2 = nn.Parameter(torch.ones(5),requires_grad=True)
         # self.b_2 = nn.Parameter(torch.zeros(5))
         # self.aa = nn.Parameter(torch.FloatTensor(10).normal_(0, 0.1), requires_grad=True, name="o")
         # self.w = nn.Parameter(torch.FloatTensor([0.1]), requires_grad=True)
-        # self.init_weights()
+        self.init_weights()
 
     def forward(self, input_sentences, sentences_length):
     # def forward(self, input_sentences):
@@ -279,94 +214,74 @@ class SLSTM(nn.Module):
         # coancatenate states
         concat_before_after = torch.cat(
             (hidden_states_before, hidden_states_after), 2)
-        
+
         self.bef_aft_time_el = time.time() - bef_aft_time_start
         words_time_gates_start = time.time()
 
         concat_part_word_gates = torch.cat(
             (concat_before_after, hidden_states_words, word_vectors), 2)
 
-        # calculate all words gates in single step
-        # conc_words_receptive = self.word_gates(concat_part_word_gates)
-        # list_words_gates = torch.split(
-        #     conc_words_receptive, self.hidden_size, 2)
+        # calculate all words gates in single step i.e the weights for the
+        # different gates inputs are concatenated
+        conc_words_receptive = self.word_gates(concat_part_word_gates)
+        list_words_gates = torch.split(
+            conc_words_receptive, self.hidden_size, 2)
         conc_word_sent_gate = self.word_sent_gate(new_sentence_vector)
         list_conc_word_sent_gate = torch.split(
             conc_word_sent_gate, self.hidden_size, 1)
 
         # calculate/update word states
         i_hat = F.sigmoid(
-            # self.W_i_hat_lr(concat_before_after) +
-            # self.W_i_hat_c(hidden_states_words) +
-            # self.W_i_hat_x(word_vectors) +
-            self.i_hat_conc(concat_part_word_gates) +
-            # list_words_gates[0] +
+            # self.i_hat_conc(concat_part_word_gates) +
+            list_words_gates[0] +
             # torch.unsqueeze(self.W_i_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[0], 1) +
             torch.unsqueeze(self.i_hat_bias, 0)
         )
 
         l_hat = F.sigmoid(
-            # self.W_l_hat_lr(concat_before_after) +
-            # self.W_l_hat_c(hidden_states_words) +
-            # self.W_l_hat_x(word_vectors) +
-            self.l_hat_conc(concat_part_word_gates) +
-            # list_words_gates[1] +
+            # self.l_hat_conc(concat_part_word_gates) +
+            list_words_gates[1] +
             # torch.unsqueeze(self.W_l_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[1], 1) +
             torch.unsqueeze(self.l_hat_bias, 0)
         )
 
         r_hat = F.sigmoid(
-            # self.W_r_hat_lr(concat_before_after) +
-            # self.W_r_hat_c(hidden_states_words) +
-            # self.W_r_hat_x(word_vectors) +
-            self.r_hat_conc(concat_part_word_gates) +
-            # list_words_gates[2] +
+            # self.r_hat_conc(concat_part_word_gates) +
+            list_words_gates[2] +
             # torch.unsqueeze(self.W_r_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[2], 1) +
             torch.unsqueeze(self.r_hat_bias, 0)
         )
 
         f_hat = F.sigmoid(
-            # self.W_f_hat_lr(concat_before_after) +
-            # self.W_f_hat_c(hidden_states_words) +
-            # self.W_f_hat_x(word_vectors) +
-            self.f_hat_conc(concat_part_word_gates) +
-            # list_words_gates[3] +
+            # self.f_hat_conc(concat_part_word_gates) +
+            list_words_gates[3] +
             # torch.unsqueeze(self.W_f_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[3], 1) +
             torch.unsqueeze(self.f_hat_bias, 0)
         )
 
         s_hat = F.sigmoid(
-            # self.W_s_hat_lr(concat_before_after) +
-            # self.W_s_hat_c(hidden_states_words) +
-            # self.W_s_hat_x(word_vectors) +
-            self.s_hat_conc(concat_part_word_gates) +
-            # list_words_gates[4] +
+            # self.s_hat_conc(concat_part_word_gates) +
+            list_words_gates[4] +
             # torch.unsqueeze(self.W_s_hat_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[4], 1) +
             torch.unsqueeze(self.s_hat_bias, 0)
         )
 
         output_gate = F.sigmoid(
-            # self.W_output_gate_lr(concat_before_after) +
-            # self.W_output_gate_c(hidden_states_words) +
-            # self.W_output_gate_x(word_vectors) +
-            self.output_gate_conc(concat_part_word_gates) +
-            # list_words_gates[5] +
+            # self.output_gate_conc(concat_part_word_gates) +
+            list_words_gates[5] +
             # torch.unsqueeze(self.W_output_gate_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[5], 1) +
             torch.unsqueeze(self.output_gate_bias, 0)
         )
 
         u_gate = F.tanh(
-            # self.W_u_gate_lr(concat_before_after) +
-            # self.W_u_gate_c(hidden_states_words) +
-            # self.W_u_gate_x(word_vectors) +
-            self.u_gate_conc(concat_part_word_gates) +
-            # list_words_gates[6] +
+            # self.u_gate_conc(concat_part_word_gates) +
+            list_words_gates[6] +
             # torch.unsqueeze(self.W_u_gate_g(new_sentence_vector), 1) +
             torch.unsqueeze(list_conc_word_sent_gate[6], 1) +
             torch.unsqueeze(self.u_gate_bias, 0)
@@ -420,8 +335,20 @@ class SLSTM(nn.Module):
                 combined_tensors = combined_tensors + tensor_
         return combined_tensors
 
-    def init_weights(self, model):
-        for param in model.parameters():
-            param.requires_grad = True
-
-        pass
+    def init_weights(self):
+        flag = True
+        for p in self.parameters():
+            if p.dim() > 1:
+                if flag:
+                    print(p.shape)
+                    flag = False
+                    continue
+                # embed()
+                # nn.init.xavier_uniform(p)
+                # continue
+            # print(p)
+            nn.init.normal_(p, 0, 0.1)
+            # nn.init.xavier_uniform(p)
+            # Why xavier init and concatenated weights converged faster
+            # compared to xavier and not concatenated ones? is it the bias?
+            # Why concatenated weights perform worse overall?
